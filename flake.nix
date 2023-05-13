@@ -23,7 +23,6 @@
           {
             packages = [
               pkgs.maven
-	      cli.defaultPackage
             ];
           };
       });
