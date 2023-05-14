@@ -11,6 +11,7 @@
         pkgs = import nixpkgs {inherit system;};
 	maven = with pkgs; (buildMaven ./project-info.json);
 	cli = import mavenix; 
+	mavenix = pkgs.callPackage (fetchTarball { url = "https://github.com/nix-community/mavenix/tarball/master"; sha256="07fwqfilf19rzwvj7ic8vsyg3l15inl1xp1a2xvzk9xhk3dwqa87"; }) { inherit pkgs; };
       in
       rec {
         packages.repo = maven.repo;
@@ -23,6 +24,7 @@
           {
             packages = [
               pkgs.maven
+	      mavenix.cli
             ];
           };
       });
