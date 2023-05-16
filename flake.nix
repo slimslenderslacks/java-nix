@@ -1,3 +1,4 @@
+# use mavenBuild https://ryantm.github.io/nixpkgs/languages-frameworks/maven/
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -8,23 +9,48 @@
   outputs = { nixpkgs, flake-utils, mavenix, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs {inherit system;};
-	maven = with pkgs; (buildMaven ./project-info.json);
-	cli = import mavenix; 
-	mavenix = pkgs.callPackage (fetchTarball { url = "https://github.com/nix-community/mavenix/tarball/master"; sha256="07fwqfilf19rzwvj7ic8vsyg3l15inl1xp1a2xvzk9xhk3dwqa87"; }) { inherit pkgs; };
+        pkgs = import nixpkgs { inherit system; };
+        maven = with pkgs; (buildMaven ./project-info.json);
+        cli = import mavenix;
+        mavenix = pkgs.callPackage (fetchTarball { url = "https://github.com/nix-community/mavenix/tarball/master"; sha256 = "07fwqfilf19rzwvj7ic8vsyg3l15inl1xp1a2xvzk9xhk3dwqa87"; }) { inherit pkgs; };
+	src = dirOf ./project-info.json;
       in
       rec {
         packages.repo = maven.repo;
-	packages.build = maven.build;
         packages.create-project-info = pkgs.writeShellScriptBin "app" ''
           ${pkgs.maven}/bin/mvn org.nixos.mvn2nix:mvn2nix-maven-plugin:mvn2nix 
         '';
+	
+        packages.jars = pkgs.stdenv.mkDerivation {
+          name = "${maven.info.project.artifactId}-${maven.info.project.version}";
+
+          src = builtins.filterSource
+            (path: type:
+              (toString path) != (toString (src + "/target")) && (toString path)
+              != (toString (src + "/.git")))
+            src;
+
+          buildInputs = [ pkgs.maven ];
+
+          buildPhase = "mvn --offline --settings ${maven.settings} compile";
+
+          installPhase = ''
+            mvn --offline --settings ${maven.settings} package
+	    mkdir -p "$out"/lib
+            mv target/*.jar "$out"/lib
+          '';
+        };
+     
+        packages.default = pkgs.writeScriptBin "entrypoint" ''
+	  ${pkgs.temurin-bin}/bin/java -cp ${packages.jars}/lib/deeplearning4j-example-sample-1.0.0-M2-bin.jar org.deeplearning4j.examples.sample.LeNetMNIST
+	'';
 
         devShells.default = pkgs.mkShell
           {
             packages = [
               pkgs.maven
-	      mavenix.cli
+              mavenix.cli
+	      pkgs.temurin-bin
             ];
           };
       });
