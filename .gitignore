@@ -33,3 +33,4 @@ build/
 .vscode/
 /result
 /.direnv/
+/logs/

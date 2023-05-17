@@ -3,16 +3,13 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    mavenix.url = "github:nix-community/mavenix";
   };
 
-  outputs = { nixpkgs, flake-utils, mavenix, ... }:
+  outputs = { nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
         maven = with pkgs; (buildMaven ./project-info.json);
-        cli = import mavenix;
-        mavenix = pkgs.callPackage (fetchTarball { url = "https://github.com/nix-community/mavenix/tarball/master"; sha256 = "07fwqfilf19rzwvj7ic8vsyg3l15inl1xp1a2xvzk9xhk3dwqa87"; }) { inherit pkgs; };
 	src = dirOf ./project-info.json;
       in
       rec {
@@ -41,7 +38,7 @@
           '';
         };
      
-        packages.default = pkgs.writeScriptBin "entrypoint" ''
+        packages.default = pkgs.writeShellScriptBin "entrypoint" ''
 	  ${pkgs.temurin-bin}/bin/java -cp ${packages.jars}/lib/deeplearning4j-example-sample-1.0.0-M2-bin.jar org.deeplearning4j.examples.sample.LeNetMNIST
 	'';
 
@@ -49,7 +46,6 @@
           {
             packages = [
               pkgs.maven
-              mavenix.cli
 	      pkgs.temurin-bin
             ];
           };
