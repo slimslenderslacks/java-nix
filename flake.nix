@@ -1,7 +1,9 @@
 # use mavenBuild https://ryantm.github.io/nixpkgs/languages-frameworks/maven/
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/release-22.11";
+    #nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
     platform-engineering.url = "github:slimslenderslacks/nix-modules";
   };
 
@@ -10,5 +12,6 @@
       {
         inherit nixpkgs;
         dir = ./.;
+        main-class = "org.deeplearning4j.examples.sample.LeNetMNIST";
       };
 }
